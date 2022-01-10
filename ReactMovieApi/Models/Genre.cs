@@ -3,10 +3,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ReactMovieApi.Models
 {
-    public class Genre : IValidatableObject
+    public class Genre : BaseDbObject, IValidatableObject
     {
-        [Key]
-        public int Id { get; set; }
         [Required(ErrorMessage = "The field with the name {0} is required.")]
         [StringLength(50)]
         [FirstLetterUpperCase]
