@@ -4,7 +4,7 @@ using ReactMovieApi.APIBehaviour;
 using ReactMovieApi.Data;
 using ReactMovieApi.Data.Repositories;
 using ReactMovieApi.Filters;
-
+using ReactMovieApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +24,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+builder.Services.AddScoped<IFileStorageService, AzureStorageService>();
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
 builder.Services.AddTransient<CustomActionFilter>();
 builder.Services.AddCors(opt =>

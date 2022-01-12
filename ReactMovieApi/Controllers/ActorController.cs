@@ -4,6 +4,7 @@ using ReactMovieApi.Data.Repositories;
 using ReactMovieApi.DTOs;
 using ReactMovieApi.DTOs.ActorDTOs;
 using ReactMovieApi.Models;
+using ReactMovieApi.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,12 +16,15 @@ namespace ReactMovieApi.Controllers
     {
         private readonly IUnitOfWork _repository;
         private readonly IMapper _mapper;
+        private readonly IFileStorageService _fileStorageService;
         private readonly ILogger _logger;
+        private readonly string _actorFileContainerName = "actors";
 
-        public ActorController(IUnitOfWork repository, IMapper mapper, ILogger<ActorController> logger)
+        public ActorController(IUnitOfWork repository, IMapper mapper, IFileStorageService fileStorageService, ILogger<ActorController> logger)
         {
             _repository = repository;
             _mapper = mapper;
+            _fileStorageService = fileStorageService;
             _logger = logger;
         }
 
@@ -47,17 +51,21 @@ namespace ReactMovieApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] ActorCreateDto actorDto)
-        {
+        public async Task<IActionResult> Post([FromForm] ActorCreateDto actorDto)
+        {            
             _logger.LogInformation("Createing a actor");
             var newActor = _mapper.Map<Actor>(actorDto);
+            if(actorDto.Picture != null)
+            {
+                newActor.Picture = await _fileStorageService.SaveFile(_actorFileContainerName, actorDto.Picture);
+            }
             await _repository.Actors.Insert(newActor);
             await _repository.SaveChanges();
             return Ok();
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Put(int id, [FromBody] ActorCreateDto creationDto)
+        public async Task<IActionResult> Put(int id, [FromForm] ActorCreateDto creationDto)
         {
             var existingActor = await _repository.Actors.GetEntity(x => x.Id == id);
             if (existingActor == null)
@@ -66,6 +74,12 @@ namespace ReactMovieApi.Controllers
             }
             existingActor = _mapper.Map<Actor>(creationDto);
             existingActor.Id = id;
+
+            if(creationDto.Picture != null)
+            {
+                existingActor.Picture = await _fileStorageService.EditFile(_actorFileContainerName, creationDto.Picture, existingActor.Picture);
+            }
+
             _repository.Actors.Update(existingActor);
             await _repository.SaveChanges();
             return NoContent();
@@ -74,12 +88,14 @@ namespace ReactMovieApi.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var genreToDelete = await _repository.Actors.GetEntity(x => x.Id == id);
-            if (genreToDelete == null)
+            var actorToDelete = await _repository.Actors.GetEntity(x => x.Id == id);
+            if (actorToDelete == null)
             {
                 return NotFound();
             }
+
             await _repository.Actors.Delete(id);
+            await _fileStorageService.DeleteFile(actorToDelete.Picture, _actorFileContainerName);
             await _repository.SaveChanges();
             return NoContent();
         }

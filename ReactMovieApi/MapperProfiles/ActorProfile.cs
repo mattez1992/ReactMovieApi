@@ -9,8 +9,7 @@ namespace ReactMovieApi.MapperProfiles
         public ActorProfile()
         {
             CreateMap<ActorCreateDto, Actor>();
-            CreateMap<Actor, ActorReadDto>()
-                .ForMember(x => x.Picture, opt => opt.Ignore());
+            CreateMap<Actor, ActorReadDto>();
         }
     }
 }
