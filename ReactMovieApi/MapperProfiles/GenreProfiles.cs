@@ -9,6 +9,7 @@ namespace ReactMovieApi.MapperProfiles
         public GenreProfiles()
         {
             CreateMap<GenreCreationDto, Genre>();
+            CreateMap<Genre, GenreReadDto>();
         }
     }
 }

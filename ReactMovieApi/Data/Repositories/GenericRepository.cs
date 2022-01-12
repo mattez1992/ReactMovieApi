@@ -1,7 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
+using ReactMovieApi.DTOs;
+using ReactMovieApi.Extensions;
+using ReactMovieApi.Helpers;
 using ReactMovieApi.Models;
+using System.Linq;
 using System.Linq.Expressions;
+using X.PagedList;
 
 namespace ReactMovieApi.Data.Repositories
 {
@@ -24,7 +29,7 @@ namespace ReactMovieApi.Data.Repositories
             
         }
 
-        public async Task<IList<T>> GettAllEntities(Expression<Func<T, bool>> expression = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null)
+        public async Task<IPagedList<T>> GettAllEntities(PageRequest pageRequest, Expression<Func<T, bool>> expression = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null)
         {
             IQueryable<T> query = _dbContext.Set<T>();
             if (expression != null)
@@ -39,10 +44,29 @@ namespace ReactMovieApi.Data.Repositories
             {
                 query = orderBy(query);
             }
-
-            return await query.AsNoTracking().ToListAsync();
+            return await query.AsNoTracking().ToPagedListAsync(pageRequest.Page, pageRequest.RecordsperPage);
         }
 
+        // other pagination solution 
+        public async Task<List<T>> GetPages(HttpContext httpContext, PaginationDto paginationDto, Expression<Func<T, bool>> expression = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null)
+        {
+            var query = _dbContext.Set<T>().AsQueryable();
+            await httpContext.InsertPageCountInPaginationHeader(query);
+            if (expression != null)
+            {
+                query.Where(expression);
+            }
+            if (includes != null)
+            {
+                query = includes(query);
+            }
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+            var pages = await query.Paginate(paginationDto).ToListAsync();
+            return pages;
+        }
 
         public async Task Insert(T entity)
         {

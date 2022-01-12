@@ -1,16 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore.Query;
+using ReactMovieApi.DTOs;
 using ReactMovieApi.Models;
 using System.Linq.Expressions;
+using X.PagedList;
 
 namespace ReactMovieApi.Data.Repositories
 {
     public interface IGenericRepository<T> where T : BaseDbObject
     {
-        Task<IList<T>> GettAllEntities(
+        Task<IPagedList<T>> GettAllEntities(PageRequest pageRequest,
             Expression<Func<T, bool>> expression = null,
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null
             );
+        Task<List<T>> GetPages(HttpContext httpContext, PaginationDto paginationDto,
+            Expression<Func<T, bool>> expression = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+            Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null);
         Task<T?> GetEntity(Expression<Func<T, bool>> expression,
             Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null);
         Task Insert(T entity);

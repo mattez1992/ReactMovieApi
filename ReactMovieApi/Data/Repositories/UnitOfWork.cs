@@ -8,9 +8,12 @@ namespace ReactMovieApi.Data.Repositories
 
         public IGenreRepository Genres {get; private set;}
 
+        public IActorRepository Actors { get; private set; }
+
         public UnitOfWork(ApplicationDbContext dbContext)
         {
             Genres = new GenreRepository(dbContext);
+            Actors = new ActorRepository(dbContext);
             _dbContext = dbContext;
         }
         public void Dispose()

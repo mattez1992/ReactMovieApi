@@ -26,12 +26,18 @@ namespace MoviesApi.Controllers
         }
         // GET: api/<GenresController>
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery] PageRequest pageRequest)
         {
             _logger.LogInformation("Getting all genres");
-            return Ok(await _repository.Genres.GettAllEntities());
+            return Ok(_mapper.Map<IEnumerable<GenreReadDto>>(await _repository.Genres.GettAllEntities(pageRequest)));
         }
-
+        [HttpGet("pages")]
+        public async Task<IActionResult> GetPages([FromQuery] PaginationDto pageRequest)
+        {
+            _logger.LogInformation("Getting all genres");
+            var genres = await _repository.Genres.GetPages(HttpContext, pageRequest);
+            return Ok(_mapper.Map<IEnumerable<GenreReadDto>>(genres));
+        }
         // GET api/<GenresController>/5
         [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
@@ -43,7 +49,8 @@ namespace MoviesApi.Controllers
                 _logger.LogWarning($"Could not find genre with id {id}");
                 return NotFound();
             }
-            return Ok(genre);
+            var genreReadDto = _mapper.Map<GenreReadDto>(genre);
+            return Ok(genreReadDto);
         }
 
         // POST api/<GenresController>
@@ -58,16 +65,31 @@ namespace MoviesApi.Controllers
         }
 
         // PUT api/<GenresController>/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] string value)
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Put(int id, [FromBody] GenreCreationDto creationDto)
         {
+            var existingGenre = await _repository.Genres.GetEntity(x => x.Id == id);
+            if(existingGenre == null)
+            {
+                return NotFound();
+            }
+            existingGenre.Name = _mapper.Map<Genre>(creationDto).Name;
+            _repository.Genres.Update(existingGenre);
+            await _repository.SaveChanges();
             return NoContent();
         }
 
         // DELETE api/<GenresController>/5
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
+            var genreToDelete = await _repository.Genres.GetEntity(x => x.Id == id);
+            if(genreToDelete == null)
+            {
+                return NotFound();
+            }
+            await _repository.Genres.Delete(id);
+            await _repository.SaveChanges();
             return NoContent();
         }
     }
