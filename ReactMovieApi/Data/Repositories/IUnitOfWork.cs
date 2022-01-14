@@ -6,6 +6,9 @@ namespace ReactMovieApi.Data.Repositories
     {
         IGenreRepository Genres { get; }
         IActorRepository Actors { get; }
+        IMovieTheaterRepository MovieTheaters { get; }
+        IMovieRepository Movies { get; }
+        IMovieActorsRepository MovieActors { get; }
         Task<int> SaveChanges();
     }
 }

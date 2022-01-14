@@ -2,7 +2,7 @@
 
 namespace ReactMovieApi.Models
 {
-    public class BaseDbObject
+    public abstract class BaseDbObject
     {
         [Key]
         public int Id { get; set; }

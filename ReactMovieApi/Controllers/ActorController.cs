@@ -33,7 +33,7 @@ namespace ReactMovieApi.Controllers
         {
             _logger.LogInformation("Getting all actors");
             var actors = await _repository.Actors.GetPages(HttpContext, pageRequest);
-            return Ok(_mapper.Map<IEnumerable<ActorReadDto>>(actors));
+            return Ok(_mapper.Map<List<ActorReadDto>>(actors));
         }
 
         [HttpGet("{id:int}")]
@@ -48,6 +48,21 @@ namespace ReactMovieApi.Controllers
             }
             var actorReadDto = _mapper.Map<ActorReadDto>(actor);
             return Ok(actorReadDto);
+        }
+        [HttpGet("searchByName/{query}")]
+        public async Task<ActionResult<List<ActorsMovieDto>>> Get(string query)
+        {
+            var actors = await _repository.Actors.GettAllEntities(expression:x => x.Name.Contains(query), orderBy:x => x.OrderBy(f => f.Name));
+            if (actors == null)
+            {
+                return new List<ActorsMovieDto>();
+            }
+            else
+            {
+                List<ActorsMovieDto> actorMovieDto = actors.Select(x => new ActorsMovieDto { Id = x.Id, Name = x.Name, Picture = x.Picture }).Take(5).ToList(); ;
+                return Ok(actorMovieDto);
+            }
+           
         }
 
         [HttpPost]

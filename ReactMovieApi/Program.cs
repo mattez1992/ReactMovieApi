@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite;
@@ -6,7 +7,9 @@ using ReactMovieApi.APIBehaviour;
 using ReactMovieApi.Data;
 using ReactMovieApi.Data.Repositories;
 using ReactMovieApi.Filters;
+using ReactMovieApi.MapperProfiles;
 using ReactMovieApi.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +19,7 @@ builder.Services.AddControllers(opt =>
 {
     opt.Filters.Add(typeof(CustomExceptionFilter));
     opt.Filters.Add(typeof(ParseBadRequestFilter));
-}).ConfigureApiBehaviorOptions(BadRequestBehaviour.Parse);
+}).AddJsonOptions(opt => opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles).ConfigureApiBehaviorOptions(BadRequestBehaviour.Parse);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddResponseCaching();
@@ -26,6 +29,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOpt => sqlOpt.UseNetTopologySuite());
 });
+
+
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+// inject GeometryFactory to MovieTheaterProfile to enable mapping NetTopologySuite classes to regular classes.
+builder.Services.AddSingleton(provider => new MapperConfiguration(conf =>
+{
+    var geometryFactory = provider.GetRequiredService<GeometryFactory>();
+    conf.AddProfile(new MovieTheaterProfile(geometryFactory));
+    conf.AddProfile(new GenreProfiles());
+    conf.AddProfile(new ActorProfile());
+    conf.AddProfile(new MovieProfile());
+    conf.AddProfile(new MovieActorProfile());
+}).CreateMapper());
 builder.Services.AddSingleton<GeometryFactory>(NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326));
 builder.Services.AddScoped<IFileStorageService, AzureStorageService>();
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
@@ -39,7 +56,8 @@ builder.Services.AddCors(opt =>
         .WithExposedHeaders(new string[] { "totalAmountOfrecords" });
     });
 });
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+
 
 var app = builder.Build();
 

@@ -6,9 +6,9 @@ using X.PagedList;
 
 namespace ReactMovieApi.Data.Repositories
 {
-    public interface IGenericRepository<T> where T : BaseDbObject
+    public interface IGenericRepository<T> where T : class
     {
-        Task<IPagedList<T>> GettAllEntities(PageRequest pageRequest,
+        Task<IEnumerable<T>> GettAllEntities(PageRequest pageRequest = null,
             Expression<Func<T, bool>> expression = null,
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null
@@ -18,7 +18,7 @@ namespace ReactMovieApi.Data.Repositories
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null);
         Task<T?> GetEntity(Expression<Func<T, bool>> expression,
-            Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null);
+            Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null);
         Task Insert(T entity);
         Task InserRange(IEnumerable<T> entities);
         Task Delete(int id);

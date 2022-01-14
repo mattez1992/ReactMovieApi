@@ -9,5 +9,6 @@ namespace ReactMovieApi.Models
         [StringLength(100)]
         public string Name { get; set; }
         public Point Location { get; set; }
+        public virtual IList<Movie> Movies { get; set;}
     }
 }

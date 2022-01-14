@@ -9,6 +9,7 @@ namespace ReactMovieApi.Models
         [StringLength(50)]
         [FirstLetterUpperCase]
         public string Name { get; set; }
+        public virtual IList<Movie> Movies { get; set; }
 
         // testing to using IValidableObject interface to validate firsletter upper case.
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

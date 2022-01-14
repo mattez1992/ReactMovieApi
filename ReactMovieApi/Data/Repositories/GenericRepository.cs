@@ -10,7 +10,7 @@ using X.PagedList;
 
 namespace ReactMovieApi.Data.Repositories
 {
-    public class GenericRepository<T> : IGenericRepository<T> where T : BaseDbObject
+    public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         protected readonly ApplicationDbContext _dbContext;
 
@@ -18,24 +18,9 @@ namespace ReactMovieApi.Data.Repositories
         {
             _dbContext = dbContext;
         }
-        public async Task<T?> GetEntity(Expression<Func<T, bool>> expression, Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null)
+        public async Task<T?> GetEntity(Expression<Func<T, bool>> expression, Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null)
         {
             IQueryable<T> query = _dbContext.Set<T>();
-            if (includes != null)
-            {
-                query = includes(query);
-            }
-            return await query.AsNoTracking().FirstOrDefaultAsync(expression);
-            
-        }
-
-        public async Task<IPagedList<T>> GettAllEntities(PageRequest pageRequest, Expression<Func<T, bool>> expression = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null)
-        {
-            IQueryable<T> query = _dbContext.Set<T>();
-            if (expression != null)
-            {
-                query.Where(expression);
-            }
             if (includes != null)
             {
                 query = includes(query);
@@ -44,7 +29,34 @@ namespace ReactMovieApi.Data.Repositories
             {
                 query = orderBy(query);
             }
-            return await query.AsNoTracking().ToPagedListAsync(pageRequest.Page, pageRequest.RecordsperPage);
+            return await query.AsNoTracking().FirstOrDefaultAsync(expression);
+            
+        }
+
+        public async Task<IEnumerable<T>> GettAllEntities(PageRequest pageRequest = null, Expression<Func<T, bool>> expression = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> includes = null)
+        {
+            IQueryable<T> query = _dbContext.Set<T>();
+
+            if (expression != null)
+            {
+                query = query.Where(expression);
+            }
+            if (includes != null)
+            {
+                query = includes(query);
+            }
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }           
+            if (pageRequest != null)
+            {
+                return await query.AsNoTracking().ToPagedListAsync(pageRequest.Page, pageRequest.RecordsperPage);
+            }
+            else
+            {
+                return await query.AsNoTracking().ToListAsync();
+            }
         }
 
         // other pagination solution 

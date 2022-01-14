@@ -9,7 +9,7 @@ namespace ReactMovieApi.MapperProfiles
         public ActorProfile()
         {
             CreateMap<ActorCreateDto, Actor>();
-            CreateMap<Actor, ActorReadDto>();
+            CreateMap<Actor, ActorReadDto>().ReverseMap();
         }
     }
 }
