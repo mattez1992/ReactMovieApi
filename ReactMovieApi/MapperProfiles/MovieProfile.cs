@@ -3,6 +3,7 @@ using ReactMovieApi.DTOs;
 using ReactMovieApi.DTOs.MovieDtos;
 using ReactMovieApi.DTOs.MovieTheaterDTOs;
 using ReactMovieApi.Models;
+using ReactMovieApi.Models.LinkingTables;
 
 namespace ReactMovieApi.MapperProfiles
 {
@@ -12,8 +13,8 @@ namespace ReactMovieApi.MapperProfiles
         {
             CreateMap<MovieCreateDto, Movie>()
                 .ForMember(x => x.Poster, opt => opt.Ignore())
-                .ForMember(x => x.Genres, opt => opt.MapFrom(MapGenres))
-                .ForMember(x => x.MovieTheaters, opt => opt.MapFrom(MapTheaters))
+                .ForMember(x => x.MoviesGenres, opt => opt.MapFrom(MapGenres))
+                .ForMember(x => x.MovieTheatersMovies, opt => opt.MapFrom(MapTheaters))
                 .ForMember(x => x.MoviesActors, opt => opt.MapFrom(MapMovieActors));
             CreateMap<Movie, MovieReadDto>()
                 .ForMember(x => x.Genres, opt => opt.MapFrom(MapMoviesGenres))
@@ -25,18 +26,21 @@ namespace ReactMovieApi.MapperProfiles
         private IList<MovieActorReadDto> MapMoviesActors(Movie movie, MovieReadDto readDto)
         {
             var result = new List<MovieActorReadDto>();
-
-            for (int i = 0; i < movie.MoviesActors.Count; i++)
+            if(movie.MoviesActors != null)
             {
-                result.Add(new MovieActorReadDto
+                for (int i = 0; i < movie.MoviesActors.Count; i++)
                 {
-                    ActorId = movie.MoviesActors[i].ActorId,
-                    Name = movie.MoviesActors[i].Actor.Name,
-                    Picture = movie.MoviesActors[i].Actor.Picture,
-                    Character = movie.MoviesActors[i].Character,
-                    Order = movie.MoviesActors[i].Order
-                });
+                    result.Add(new MovieActorReadDto
+                    {
+                        Id = movie.MoviesActors[i].ActorId,
+                        Name = movie.MoviesActors[i].Actor.Name,
+                        Picture = movie.MoviesActors[i].Actor.Picture,
+                        MovieCharacter = movie.MoviesActors[i].MovieCharacter,
+                        Order = movie.MoviesActors[i].Order
+                    });
+                }
             }
+            
 
             return result;
         }
@@ -45,13 +49,19 @@ namespace ReactMovieApi.MapperProfiles
 
             var theaters = new List<MovieTheaterReadDto>();
 
-            if (movie.MovieTheaters != null)
+            if (movie.MovieTheatersMovies != null)
             {
-                foreach (var theater in movie.MovieTheaters)
+                foreach (var theater in movie.MovieTheatersMovies)
                 {
-                    theaters.Add(new MovieTheaterReadDto() { Id = theater.Id, Latitude = theater.Location.Coordinate.Y, Longitude = theater.Location.Coordinate.X, Name = theater.Name });
+                    theaters.Add(new MovieTheaterReadDto()
+                    {
+                        Id = theater.MovieTheaterId,
+                        Name = theater.MovieTheater.Name,
+                        Latitude = theater.MovieTheater.Location.Y,
+                        Longitude = theater.MovieTheater.Location.X
+                    });
                 }
-            }
+                }
 
             return theaters;
         }
@@ -59,11 +69,11 @@ namespace ReactMovieApi.MapperProfiles
         {
             var genres = new List<GenreReadDto>();
 
-            if (movie.Genres != null)
+            if (movie.MoviesGenres != null)
             {
-                foreach (var genre in movie.Genres)
+                foreach (var genre in movie.MoviesGenres)
                 {
-                    genres.Add(new GenreReadDto() { Id = genre.Id, Name = genre.Name });
+                    genres.Add(new GenreReadDto() { Id = genre.GenreId, Name = genre.Genre.Name });
                 }
             }
 
@@ -73,9 +83,9 @@ namespace ReactMovieApi.MapperProfiles
 
         #region Mappings For Creating A Movie
         // mappings for creating
-        private IList<Genre> MapGenres(MovieCreateDto createDto, Movie movie)
+        private IList<GenreMovie> MapGenres(MovieCreateDto createDto, Movie movie)
         {
-            var result = new List<Genre>();
+            var result = new List<GenreMovie>();
             if (createDto.GenresIds == null)
             {
                 return result;
@@ -83,13 +93,13 @@ namespace ReactMovieApi.MapperProfiles
 
             foreach (var id in createDto.GenresIds)
             {
-                result.Add(new Genre { Id = id });
+                result.Add(new GenreMovie { GenreId = id });
             }
             return result;
         }
-        private IList<MovieTheater> MapTheaters(MovieCreateDto createDto, Movie movie)
+        private IList<MovieMovieTheater> MapTheaters(MovieCreateDto createDto, Movie movie)
         {
-            var result = new List<MovieTheater>();
+            var result = new List<MovieMovieTheater>();
             if (createDto.GenresIds == null)
             {
                 return result;
@@ -97,7 +107,7 @@ namespace ReactMovieApi.MapperProfiles
 
             foreach (var id in createDto.MovieTheatersIds)
             {
-                result.Add(new MovieTheater { Id = id });
+                result.Add(new MovieMovieTheater { MovieTheaterId = id });
             }
             return result;
         }
@@ -108,13 +118,9 @@ namespace ReactMovieApi.MapperProfiles
             {
                 return result;
             }
-            //for (int i = 0; i < createDto.Actors.Count; i++)
-            //{
-            //    result.Add(new MoviesActors { ActorId = createDto.Actors[i].Id, Character = createDto.Actors[i].MovieCharacter, Order = i+1 });
-            //}
             foreach (var actor in createDto.Actors)
             {
-                result.Add(new MoviesActors { ActorId = actor.Id, Character = actor.MovieCharacter });
+                result.Add(new MoviesActors { ActorId = actor.Id, MovieCharacter = actor.MovieCharacter });
             }
             return result;
         }

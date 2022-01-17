@@ -6,6 +6,7 @@ using ReactMovieApi.Data.Repositories;
 using ReactMovieApi.DTOs;
 using ReactMovieApi.DTOs.MovieActorsDTOs;
 using ReactMovieApi.DTOs.MovieDtos;
+using ReactMovieApi.DTOs.MovieTheaterDTOs;
 using ReactMovieApi.Models;
 using ReactMovieApi.Services;
 
@@ -32,41 +33,43 @@ namespace ReactMovieApi.Controllers
         [HttpGet()]
         public async Task<IActionResult> Get([FromQuery] PaginationDto pageRequest)
         {
-            _logger.LogInformation("Getting all movies");
-            var movies = await _repository.Movies.GetPages(HttpContext, pageRequest, includes: x => x.Include(x => x.MovieTheaters).Include(x => x.Genres).Include(x => x.MoviesActors).ThenInclude(x => x.Actor));
-            return Ok(_mapper.Map<IEnumerable<MovieReadDto>>(movies));
+            var top = 6;
+            var today = DateTime.Today;
+
+            var upcomingReleases = (await _repository.Movies.GettAllEntities(expression: x => x.ReleaseDate > today, orderBy: x => x.OrderBy(y => y.ReleaseDate))).Take(top).ToList();
+            var inTheaters = (await _repository.Movies.GettAllEntities(expression: x => x.inTheaters, orderBy: x => x.OrderBy(y => y.ReleaseDate))).Take(top).ToList();
+
+            var indexPageDto = new MovieIndexPageDto() { InTheaters = _mapper.Map<List<MovieReadDto>>(inTheaters), UpComingReleases = _mapper.Map<List<MovieReadDto>>(upcomingReleases) };
+            return Ok(indexPageDto);
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<ActionResult<MovieReadDto>> Get(int id)
         {
             _logger.LogInformation($"Getting movie with id {id}");
-            var movie = await _repository.Movies.GetEntity(x => x.Id == id, includes: x => x.Include(x => x.MovieTheaters).Include(x => x.Genres).Include(x => x.MoviesActors).ThenInclude(x => x.Actor));
+            var movie = await _repository.Movies.GetEntity(x => x.Id == id, includes: x => x.Include(x => x.MovieTheatersMovies).ThenInclude(x => x.MovieTheater).Include(x => x.MoviesGenres).ThenInclude(x => x.Genre).Include(x => x.MoviesActors).ThenInclude(x => x.Actor));
             if (movie == null)
             {
                 return NotFound();
             }
             var movieDto = _mapper.Map<MovieReadDto>(movie);
             movieDto.MoviesActors = movieDto.MoviesActors.OrderBy(x => x.Order).ToList();
-            return Ok(movieDto);
+            return movieDto;
         }
+        [HttpGet("filter")]
+        public async Task<ActionResult<List<MovieReadDto>>> Filter([FromQuery] FilterMoviesDto filterMoviesDto)
+        {
+            var movies = await _repository.Movies.FilterMovies(HttpContext,filterMoviesDto);
+            return _mapper.Map<List<MovieReadDto>>(movies);
+        }
+
+
 
         [HttpPost]
         public async Task<IActionResult> Post([FromForm] MovieCreateDto createDto)
         {
-            //[FromForm] MovieCreateDto createDto
-            //var Actors = new MovieActorsCreationDto { Id = 1, Character = "Spider man" };
-            //var genresId = new List<int> { 1};
-            //var movieTheaterIds = new List<int> { 1};
-            //var createDto = new MovieCreateDto 
-            //{ 
-            //    Title = "Spider Man: Far from Home", 
-            //    Actors = new List<MovieActorsCreationDto> { Actors }, 
-            //    dateTime = DateTime.Now, GenresIds = genresId, 
-            //    inTheaters = true, MovieTheatersIds = movieTheaterIds,
-            //    Summary = "Spider man does things", Trailer = "No trailer" };
             var newmovie = _mapper.Map<Movie>(createDto);
-            if(createDto.Poster != null)
+            if (createDto.Poster != null)
             {
                 newmovie.Poster = await _fileStorageService.SaveFile(_movieFileContainerName, createDto.Poster);
             }
@@ -77,7 +80,7 @@ namespace ReactMovieApi.Controllers
         }
         private void AnnotateActorsOrder(Movie movie)
         {
-            if(movie.MoviesActors != null)
+            if (movie.MoviesActors != null)
             {
                 for (int i = 0; i < movie.MoviesActors.Count; i++)
                 {
@@ -85,19 +88,62 @@ namespace ReactMovieApi.Controllers
                 }
             }
         }
-
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Put(int id, [FromForm] MovieReadDto creationDto)
+        [HttpGet("getput/{id:int}")]
+        public async Task<IActionResult> GetEditDto(int id)
         {
-            var existingmovie = await _repository.Movies.GetEntity(x => x.Id == id);
+            var movieActionResult = await Get(id);
+            if (movieActionResult == null && movieActionResult.Result != null)
+            {
+                return NotFound();
+            }
+            var movie = movieActionResult.Value;
+            var selectedGenreIds = movie.Genres.Select(x => x.Id).ToList();
+            var nonSelectedGenres = await _repository.Genres.GettAllEntities(expression: x => !selectedGenreIds.Contains(x.Id));
+
+            var selectedMovieTheatersIds = movie.MovieTheaters.Select(x => x.Id).ToList();
+            var nonSelectedMovieTheaters = await _repository.MovieTheaters.GettAllEntities(expression: x => !selectedMovieTheatersIds.Contains(x.Id));
+
+            var nonSelectedGenredDtos = _mapper.Map<List<GenreReadDto>>(nonSelectedGenres);
+            var nonSelectedMovieTheatersDtos = _mapper.Map<List<MovieTheaterReadDto>>(nonSelectedMovieTheaters);
+
+            var response = new MovieEditPageDto();
+            response.Movie = movie;
+            response.SelectedGenres = movie.Genres.ToList();
+            response.NonSelectedGenres = nonSelectedGenredDtos;
+            response.SelectedMovieTheaters = movie.MovieTheaters.ToList();
+            response.NonSelectedMovieTheaters = nonSelectedMovieTheatersDtos;
+            response.Actors = movie.MoviesActors.ToList();
+            return Ok(response);
+        }
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Put(int id, [FromForm] MovieCreateDto creationDto)
+        {
+            var existingmovie = await _repository.Movies.GetEntity(x => x.Id == id, includes: x => x.Include(x => x.MoviesGenres).Include(x => x.MovieTheatersMovies).Include(x => x.MoviesActors));
+                    
             if (existingmovie == null)
             {
                 return NotFound();
             }
-            existingmovie = _mapper.Map<Movie>(creationDto);
-            existingmovie.Id = id;
+            if(creationDto.Actors != null && creationDto.Actors.Count > 0 && existingmovie.MoviesActors != null)
+            {
+                _repository.Movies.RemoveRelatedActors(existingmovie);
+            }
+            if(creationDto.MovieTheatersIds != null && creationDto.MovieTheatersIds.Count > 0 && existingmovie.MovieTheatersMovies != null)
+            {
+                _repository.Movies.RemoveRelatedTheater(existingmovie);
+            }
+            if(creationDto.GenresIds != null && creationDto.GenresIds.Count > 0 && existingmovie.MoviesGenres != null)
+            {
+                _repository.Movies.RemoveRelatedGenres(existingmovie);
+            }
+            existingmovie = _mapper.Map(creationDto, existingmovie);
 
+            if (creationDto.Poster != null)
+            {
+                existingmovie.Poster = await _fileStorageService.EditFile(_movieFileContainerName, creationDto.Poster, existingmovie.Poster);
+            }
 
+            AnnotateActorsOrder(existingmovie);
             _repository.Movies.Update(existingmovie);
             await _repository.SaveChanges();
             return NoContent();
@@ -113,6 +159,7 @@ namespace ReactMovieApi.Controllers
             }
 
             await _repository.Movies.Delete(id);
+            await _fileStorageService.DeleteFile(movieToDelete.Poster, _movieFileContainerName);
             await _repository.SaveChanges();
             return NoContent();
         }

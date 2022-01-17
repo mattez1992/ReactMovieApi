@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ReactMovieApi.Models.LinkingTables;
+using System.ComponentModel.DataAnnotations;
 namespace ReactMovieApi.Models
 {
     public class Movie :  BaseDbObject
@@ -11,8 +12,11 @@ namespace ReactMovieApi.Models
         public bool inTheaters { get; set; }
         public DateTime ReleaseDate { get; set; }
         public string Poster { get; set; }
-        public virtual IList<Genre> Genres { get; set; }
-        public virtual IList<MovieTheater> MovieTheaters { get; set; }
-        public virtual IList<MoviesActors> MoviesActors { get; set; }
+        public List<GenreMovie> MoviesGenres { get; set; }
+        public List<MovieMovieTheater> MovieTheatersMovies { get; set; }
+        public List<MoviesActors> MoviesActors { get; set; }
+        //public  List<Genre> Genres { get; set; }
+        //public  List<MovieTheater> MovieTheaters { get; set; }
+        //public  List<MoviesActors> MoviesActors { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using ReactMovieApi.Data;
@@ -12,9 +13,10 @@ using ReactMovieApi.Data;
 namespace ReactMovieApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220114090728_changedCharacterToMovieCharacterForActorAndMovieActorTable")]
+    partial class changedCharacterToMovieCharacterForActorAndMovieActorTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,6 +24,36 @@ namespace ReactMovieApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+
+            modelBuilder.Entity("GenreMovie", b =>
+                {
+                    b.Property<int>("GenresId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MoviesId")
+                        .HasColumnType("int");
+
+                    b.HasKey("GenresId", "MoviesId");
+
+                    b.HasIndex("MoviesId");
+
+                    b.ToTable("GenreMovie");
+                });
+
+            modelBuilder.Entity("MovieMovieTheater", b =>
+                {
+                    b.Property<int>("MovieTheatersId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MoviesId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MovieTheatersId", "MoviesId");
+
+                    b.HasIndex("MoviesId");
+
+                    b.ToTable("MovieMovieTheater");
+                });
 
             modelBuilder.Entity("ReactMovieApi.Models.Actor", b =>
                 {
@@ -70,36 +102,6 @@ namespace ReactMovieApi.Migrations
                     b.ToTable("Genres");
                 });
 
-            modelBuilder.Entity("ReactMovieApi.Models.LinkingTables.GenreMovie", b =>
-                {
-                    b.Property<int>("GenreId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MovieId")
-                        .HasColumnType("int");
-
-                    b.HasKey("GenreId", "MovieId");
-
-                    b.HasIndex("MovieId");
-
-                    b.ToTable("GenreMovies");
-                });
-
-            modelBuilder.Entity("ReactMovieApi.Models.LinkingTables.MovieMovieTheater", b =>
-                {
-                    b.Property<int>("MovieTheaterId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MovieId")
-                        .HasColumnType("int");
-
-                    b.HasKey("MovieTheaterId", "MovieId");
-
-                    b.HasIndex("MovieId");
-
-                    b.ToTable("MovieMovieTheaters");
-                });
-
             modelBuilder.Entity("ReactMovieApi.Models.Movie", b =>
                 {
                     b.Property<int>("Id")
@@ -107,12 +109,6 @@ namespace ReactMovieApi.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<int?>("GenreId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MovieTheaterId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Poster")
                         .IsRequired()
@@ -138,10 +134,6 @@ namespace ReactMovieApi.Migrations
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GenreId");
-
-                    b.HasIndex("MovieTheaterId");
 
                     b.ToTable("Movies");
                 });
@@ -190,53 +182,34 @@ namespace ReactMovieApi.Migrations
                     b.ToTable("MovieTheaters");
                 });
 
-            modelBuilder.Entity("ReactMovieApi.Models.LinkingTables.GenreMovie", b =>
-                {
-                    b.HasOne("ReactMovieApi.Models.Genre", "Genre")
-                        .WithMany()
-                        .HasForeignKey("GenreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ReactMovieApi.Models.Movie", "Movie")
-                        .WithMany("MoviesGenres")
-                        .HasForeignKey("MovieId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Genre");
-
-                    b.Navigation("Movie");
-                });
-
-            modelBuilder.Entity("ReactMovieApi.Models.LinkingTables.MovieMovieTheater", b =>
-                {
-                    b.HasOne("ReactMovieApi.Models.Movie", "Movie")
-                        .WithMany("MovieTheatersMovies")
-                        .HasForeignKey("MovieId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ReactMovieApi.Models.MovieTheater", "MovieTheater")
-                        .WithMany()
-                        .HasForeignKey("MovieTheaterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Movie");
-
-                    b.Navigation("MovieTheater");
-                });
-
-            modelBuilder.Entity("ReactMovieApi.Models.Movie", b =>
+            modelBuilder.Entity("GenreMovie", b =>
                 {
                     b.HasOne("ReactMovieApi.Models.Genre", null)
-                        .WithMany("Movies")
-                        .HasForeignKey("GenreId");
+                        .WithMany()
+                        .HasForeignKey("GenresId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
+                    b.HasOne("ReactMovieApi.Models.Movie", null)
+                        .WithMany()
+                        .HasForeignKey("MoviesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MovieMovieTheater", b =>
+                {
                     b.HasOne("ReactMovieApi.Models.MovieTheater", null)
-                        .WithMany("Movies")
-                        .HasForeignKey("MovieTheaterId");
+                        .WithMany()
+                        .HasForeignKey("MovieTheatersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReactMovieApi.Models.Movie", null)
+                        .WithMany()
+                        .HasForeignKey("MoviesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ReactMovieApi.Models.MoviesActors", b =>
@@ -258,23 +231,9 @@ namespace ReactMovieApi.Migrations
                     b.Navigation("Movie");
                 });
 
-            modelBuilder.Entity("ReactMovieApi.Models.Genre", b =>
-                {
-                    b.Navigation("Movies");
-                });
-
             modelBuilder.Entity("ReactMovieApi.Models.Movie", b =>
                 {
-                    b.Navigation("MovieTheatersMovies");
-
                     b.Navigation("MoviesActors");
-
-                    b.Navigation("MoviesGenres");
-                });
-
-            modelBuilder.Entity("ReactMovieApi.Models.MovieTheater", b =>
-                {
-                    b.Navigation("Movies");
                 });
 #pragma warning restore 612, 618
         }

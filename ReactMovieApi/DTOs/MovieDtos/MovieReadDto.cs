@@ -10,10 +10,10 @@ namespace ReactMovieApi.DTOs.MovieDtos
         public string Summary { get; set; }
         public string Trailer { get; set; }
         public bool inTheaters { get; set; }
-        public DateTime realseDate { get; set; }
+        public DateTime ReleaseDate { get; set; }
         public string Poster { get; set; }
-        public virtual IList<GenreReadDto> Genres { get; set; }
-        public virtual IList<MovieTheaterReadDto> MovieTheaters { get; set; }
-        public virtual IList<MovieActorReadDto> MoviesActors { get; set; }
+        public virtual List<GenreReadDto> Genres { get; set; }
+        public virtual List<MovieTheaterReadDto> MovieTheaters { get; set; }
+        public virtual List<MovieActorReadDto> MoviesActors { get; set; }
     }
 }

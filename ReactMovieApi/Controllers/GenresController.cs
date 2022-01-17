@@ -31,6 +31,11 @@ namespace MoviesApi.Controllers
             _logger.LogInformation("Getting all genres");
             return Ok(_mapper.Map<IEnumerable<GenreReadDto>>(await _repository.Genres.GettAllEntities(pageRequest)));
         }
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAll()
+        {
+            return Ok(_mapper.Map<IEnumerable<GenreReadDto>>(await _repository.Genres.GettAllEntities(orderBy: x => x.OrderBy(x => x.Name))));
+        }
         [HttpGet("pages")]
         public async Task<IActionResult> GetPages([FromQuery] PaginationDto pageRequest)
         {

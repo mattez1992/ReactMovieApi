@@ -6,8 +6,16 @@ namespace ReactMovieApi.Extensions
     {
         public static IQueryable<T> Paginate<T>(this IQueryable<T> queryable, PaginationDto paginationDto)
         {
-            return queryable.Skip((paginationDto.Page - 1) * paginationDto.RecordsperPage)
-                .Take(paginationDto.RecordsperPage);
+            try
+            {
+                return queryable.Skip((paginationDto.Page - 1) * paginationDto.RecordsperPage)
+               .Take(paginationDto.RecordsperPage);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }          
         }
     }
 }

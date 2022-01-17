@@ -29,6 +29,7 @@ namespace ReactMovieApi.Data.Repositories
             {
                 query = orderBy(query);
             }
+            
             return await query.AsNoTracking().FirstOrDefaultAsync(expression);
             
         }
@@ -64,6 +65,7 @@ namespace ReactMovieApi.Data.Repositories
         {
             var query = _dbContext.Set<T>().AsQueryable();
             await httpContext.InsertPageCountInPaginationHeader(query);
+
             if (expression != null)
             {
                 query.Where(expression);
@@ -99,8 +101,9 @@ namespace ReactMovieApi.Data.Repositories
 
         public void Update(T entity)
         {
-            _dbContext.Set<T>().Attach(entity);
-            _dbContext.Entry(entity).State = EntityState.Modified;
+            //_dbContext.Set<T>().Attach(entity);
+            //_dbContext.Entry(entity).State = EntityState.Modified;
+            _dbContext.Update(entity);
         }
 
         public async Task Delete(int id)
