@@ -17,7 +17,6 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers(opt =>
 {
     opt.Filters.Add(typeof(CustomExceptionFilter));
@@ -45,6 +44,7 @@ builder.Services.AddSingleton(provider => new MapperConfiguration(conf =>
     conf.AddProfile(new ActorProfile());
     conf.AddProfile(new MovieProfile());
     conf.AddProfile(new MovieActorProfile());
+    conf.AddProfile(new UserProfile());
 }).CreateMapper());
 builder.Services.AddSingleton<GeometryFactory>(NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326));
 builder.Services.AddScoped<IFileStorageService, AzureStorageService>();
@@ -77,8 +77,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
                     Encoding.UTF8.GetBytes(builder.Configuration["jwtKey"])),
             ClockSkew = TimeSpan.Zero
         };
+        // this is the same as JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+        opt.MapInboundClaims = false;
     }
     );
+builder.Services.AddAuthorization(opt =>
+{
+    opt.AddPolicy("IsAdmin", p => p.RequireClaim("role", "admin"));
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -15,5 +15,7 @@ namespace ReactMovieApi.DTOs.MovieDtos
         public virtual List<GenreReadDto> Genres { get; set; }
         public virtual List<MovieTheaterReadDto> MovieTheaters { get; set; }
         public virtual List<MovieActorReadDto> MoviesActors { get; set; }
+        public double AverageRating { get; set; }
+        public int UserRate { get; set; }
     }
 }

@@ -8,6 +8,9 @@ namespace ReactMovieApi.Data.Repositories
 {
     public interface IGenericRepository<T> where T : class
     {
+        Task<bool> EntitesExists(
+            Expression<Func<T, bool>> expression = null
+            );
         Task<IEnumerable<T>> GettAllEntities(PageRequest pageRequest = null,
             Expression<Func<T, bool>> expression = null,
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,

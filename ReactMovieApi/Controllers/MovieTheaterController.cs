@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ReactMovieApi.Data.Repositories;
@@ -11,6 +13,7 @@ namespace ReactMovieApi.Controllers
 {
     [Route("api/movietheaters")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
     public class MovieTheaterController : ControllerBase
     {
         private readonly IUnitOfWork _repository;

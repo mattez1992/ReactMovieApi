@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReactMovieApi.Data.Repositories;
 using ReactMovieApi.DTOs;
@@ -12,6 +14,7 @@ namespace MoviesApi.Controllers
 {
     [Route("api/genre")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
     public class GenresController : ControllerBase
     {
         private readonly IUnitOfWork _repository;
@@ -32,6 +35,7 @@ namespace MoviesApi.Controllers
             return Ok(_mapper.Map<IEnumerable<GenreReadDto>>(await _repository.Genres.GettAllEntities(pageRequest)));
         }
         [HttpGet("all")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             return Ok(_mapper.Map<IEnumerable<GenreReadDto>>(await _repository.Genres.GettAllEntities(orderBy: x => x.OrderBy(x => x.Name))));
@@ -40,7 +44,7 @@ namespace MoviesApi.Controllers
         public async Task<IActionResult> GetPages([FromQuery] PaginationDto pageRequest)
         {
             _logger.LogInformation("Getting all genres");
-            var genres = await _repository.Genres.GetPages(HttpContext, pageRequest);
+            var genres = await _repository.Genres.GetPages(HttpContext, pageRequest, orderBy: x => x.OrderBy(x => x.Name));
             return Ok(_mapper.Map<IEnumerable<GenreReadDto>>(genres));
         }
         // GET api/<GenresController>/5

@@ -16,6 +16,10 @@ namespace ReactMovieApi.Data.Repositories
 
         public IMovieActorsRepository MovieActors { get; private set; }
 
+        public IRatingRepository Ratings { get; private set; }
+
+        public IUserRepository Users { get; private set; }
+
         public UnitOfWork(ApplicationDbContext dbContext)
         {
             Genres = new GenreRepository(dbContext);
@@ -23,6 +27,8 @@ namespace ReactMovieApi.Data.Repositories
             MovieTheaters = new MovieTheaterRepository(dbContext);
             Movies = new MovieRepository(dbContext);
             MovieActors = new MovieActorsRepository(dbContext);
+            Ratings = new RatingRepository(dbContext);
+            Users = new UserRepository(dbContext);
             _dbContext = dbContext;
         }
         public void Dispose()

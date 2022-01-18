@@ -122,5 +122,10 @@ namespace ReactMovieApi.Data.Repositories
                 _dbContext.Set<T>().RemoveRange(entities);
             }
         }
+
+        public async Task<bool> EntitesExists(Expression<Func<T, bool>> expression = null)
+        {
+            return await _dbContext.Set<T>().AnyAsync(expression);
+        }
     }
 }

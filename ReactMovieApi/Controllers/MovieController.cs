@@ -1,5 +1,8 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReactMovieApi.Data.Repositories;
@@ -14,23 +17,27 @@ namespace ReactMovieApi.Controllers
 {
     [Route("api/movies")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
     public class MovieController : ControllerBase
     {
         private readonly IUnitOfWork _repository;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         private readonly IFileStorageService _fileStorageService;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly string _movieFileContainerName = "movies";
 
-        public MovieController(IUnitOfWork repository, IMapper mapper, ILogger<MovieController> logger, IFileStorageService fileStorageService)
+        public MovieController(IUnitOfWork repository, IMapper mapper, ILogger<MovieController> logger, IFileStorageService fileStorageService, UserManager<IdentityUser> userManager)
         {
             _repository = repository;
             _mapper = mapper;
             _logger = logger;
             _fileStorageService = fileStorageService;
+            _userManager = userManager;
         }
 
         [HttpGet()]
+        [AllowAnonymous]
         public async Task<IActionResult> Get([FromQuery] PaginationDto pageRequest)
         {
             var top = 6;
@@ -44,6 +51,7 @@ namespace ReactMovieApi.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [AllowAnonymous]
         public async Task<ActionResult<MovieReadDto>> Get(int id)
         {
             _logger.LogInformation($"Getting movie with id {id}");
@@ -52,11 +60,33 @@ namespace ReactMovieApi.Controllers
             {
                 return NotFound();
             }
+
+            var averageRating = 0.0;
+            var userRating = 0;
+
+            if(await _repository.Ratings.EntitesExists(x => x.MovieId == id))
+            {
+                averageRating = (await _repository.Ratings.GettAllEntities(expression:x => x.MovieId == id)).Average(x => x.Rate);
+                if (HttpContext.User.Identity.IsAuthenticated)
+                {
+                    var email = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "email").Value;
+                    var user = await _userManager.FindByEmailAsync(email);
+                    var userId = user.Id;
+                    var existingUserRating = await _repository.Ratings.GetEntity(x => x.MovieId == id && x.UserId == userId);
+                    if(existingUserRating != null)
+                    {
+                        userRating = existingUserRating.Rate;
+                    }
+                }
+            }
             var movieDto = _mapper.Map<MovieReadDto>(movie);
+            movieDto.AverageRating = averageRating;
+            movieDto.UserRate = userRating;
             movieDto.MoviesActors = movieDto.MoviesActors.OrderBy(x => x.Order).ToList();
             return movieDto;
         }
         [HttpGet("filter")]
+        [AllowAnonymous]
         public async Task<ActionResult<List<MovieReadDto>>> Filter([FromQuery] FilterMoviesDto filterMoviesDto)
         {
             var movies = await _repository.Movies.FilterMovies(HttpContext,filterMoviesDto);

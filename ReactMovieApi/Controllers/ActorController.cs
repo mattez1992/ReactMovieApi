@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReactMovieApi.Data.Repositories;
 using ReactMovieApi.DTOs;
@@ -12,6 +14,7 @@ namespace ReactMovieApi.Controllers
 {
     [Route("api/actor")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
     public class ActorController : ControllerBase
     {
         private readonly IUnitOfWork _repository;

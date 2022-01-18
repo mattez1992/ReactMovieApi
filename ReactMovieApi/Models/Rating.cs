@@ -4,9 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ReactMovieApi.Models
 {
-    public class Rating
-    {
-        public int Id { get; set; }
+    public class Rating : BaseDbObject
+    {     
         [Range(1, 5)]
         public int Rate { get; set; }
         [ForeignKey(nameof(Movie))]
